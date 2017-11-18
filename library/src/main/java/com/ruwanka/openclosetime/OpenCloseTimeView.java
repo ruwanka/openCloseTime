@@ -18,6 +18,8 @@ import com.jakewharton.rxbinding2.view.RxView;
 import com.jakewharton.rxbinding2.widget.RxCompoundButton;
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,8 @@ public class OpenCloseTimeView extends LinearLayout {
   private final PublishSubject<OpenCloseTime> openCloseTimeSubject = PublishSubject.create();
 
   private FragmentManager fragmentManager;
+
+  private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
   private Drawable btnBg;
   private int bottomMargin;
@@ -76,9 +80,24 @@ public class OpenCloseTimeView extends LinearLayout {
     }
   }
 
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    compositeDisposable.clear();
+  }
+
   private void initOpenCloseTimes() {
     for (int i = 0; i < days.length; i++) {
       openCloseTimes.add(i, new OpenCloseTime(days[i]));
+    }
+  }
+
+  public void setOpenCloseTimes(List<OpenCloseTime> openCloseTimes) {
+    if (openCloseTimes.size() == 7) {
+      this.openCloseTimes = openCloseTimes;
+      compositeDisposable.clear();
+      removeAllViews();
+      generateDays(getContext());
     }
   }
 
@@ -89,20 +108,19 @@ public class OpenCloseTimeView extends LinearLayout {
   private void generateDays(final Context context) {
     for (int i = 0; i < 7; i++) {
       final LinearLayout openCloseView = getOpenCloseTimeStrip(context);
-
-      final CheckBox chkDay = openCloseView.findViewById(R.id.chkDay);
-      chkDay.setText(days[i]);
-
       int finalI = i;
 
-      RxCompoundButton.checkedChanges(chkDay)
+      final CheckBox chkDay = getCheckBox(days[i], openCloseView, finalI);
+
+      Disposable chkDisposable = RxCompoundButton.checkedChanges(chkDay)
           .subscribe(checked -> {
             openCloseTimes.get(finalI).setActive(checked);
             openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
           });
+      compositeDisposable.add(chkDisposable);
 
-      final Button btnOpenAt = getOpenButton(openCloseView);
-      RxView.clicks(btnOpenAt)
+      final Button btnOpenAt = getOpenButton(openCloseView, finalI);
+      Disposable openBtnDisposable = RxView.clicks(btnOpenAt)
           .map(o -> btnOpenAt.getText().toString())
           .flatMap(text -> {
             Time time = Util.getTimeFromString(text);
@@ -118,9 +136,10 @@ public class OpenCloseTimeView extends LinearLayout {
             openCloseTimes.get(finalI).setOpenTime(t);
             openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
           });
+      compositeDisposable.add(openBtnDisposable);
 
-      final Button btnCloseAt = getCloseButton(openCloseView);
-      RxView.clicks(btnCloseAt)
+      final Button btnCloseAt = getCloseButton(openCloseView, finalI);
+      Disposable closeBtnDisposable = RxView.clicks(btnCloseAt)
           .map(o -> btnCloseAt.getText().toString())
           .flatMap(text -> {
             Time time = Util.getTimeFromString(text);
@@ -136,9 +155,18 @@ public class OpenCloseTimeView extends LinearLayout {
             openCloseTimes.get(finalI).setClosedTime(t);
             openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
           });
+      compositeDisposable.add(closeBtnDisposable);
 
       addView(openCloseView);
     }
+  }
+
+  @NonNull
+  private CheckBox getCheckBox(String day, LinearLayout openCloseView, int finalI) {
+    final CheckBox chkDay = openCloseView.findViewById(R.id.chkDay);
+    chkDay.setText(day);
+    chkDay.setChecked(openCloseTimes.get(finalI).isActive());
+    return chkDay;
   }
 
   @NonNull
@@ -155,7 +183,7 @@ public class OpenCloseTimeView extends LinearLayout {
     return openCloseView;
   }
 
-  private Button getCloseButton(LinearLayout openCloseView) {
+  private Button getCloseButton(LinearLayout openCloseView, int index) {
     final Button btnCloseAt = openCloseView.findViewById(R.id.btnCloseAt);
     if (btnBg != null) {
       btnCloseAt.setBackground(btnBg);
@@ -167,10 +195,14 @@ public class OpenCloseTimeView extends LinearLayout {
     );
     params.setMargins(0, 0, itemGap, 0);
     btnCloseAt.setLayoutParams(params);
+    Time closedTime = openCloseTimes.get(index).getClosedTime();
+    if (closedTime != null) {
+      btnCloseAt.setText(Util.getTimeString(closedTime));
+    }
     return btnCloseAt;
   }
 
-  private Button getOpenButton(LinearLayout openCloseView) {
+  private Button getOpenButton(LinearLayout openCloseView, int index) {
     final Button btnOpenAt = openCloseView.findViewById(R.id.btnOpenAt);
     if (btnBg != null) {
       btnOpenAt.setBackground(btnBg);
@@ -182,6 +214,10 @@ public class OpenCloseTimeView extends LinearLayout {
     );
     params.setMargins(itemGap, 0, itemGap, 0);
     btnOpenAt.setLayoutParams(params);
+    Time openTime = openCloseTimes.get(index).getOpenTime();
+    if (openTime != null) {
+      btnOpenAt.setText(Util.getTimeString(openTime));
+    }
     return btnOpenAt;
   }
 

@@ -11,7 +11,8 @@ public class OpenCloseTime {
 
   private boolean active;
 
-  public OpenCloseTime(String day, Time openTime, Time closedTime) {
+  public OpenCloseTime(boolean active, String day, Time openTime, Time closedTime) {
+    this.active = active;
     this.day = day;
     this.openTime = openTime;
     this.closedTime = closedTime;
