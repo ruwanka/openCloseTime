@@ -1,5 +1,6 @@
 package com.ruwanka.openclosetime;
 
+@SuppressWarnings("WeakerAccess")
 public class Time {
 
   private int hour;

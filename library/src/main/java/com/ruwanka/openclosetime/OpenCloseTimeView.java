@@ -1,8 +1,5 @@
 package com.ruwanka.openclosetime;
 
-import com.jakewharton.rxbinding2.view.RxView;
-import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
-
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Context;
@@ -13,8 +10,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import com.jakewharton.rxbinding2.view.RxView;
+import com.jakewharton.rxbinding2.widget.RxCompoundButton;
+import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OpenCloseTimeView extends LinearLayout {
 
@@ -22,8 +24,9 @@ public class OpenCloseTimeView extends LinearLayout {
 
   private final String[] days = getResources().getStringArray(R.array.days);
 
-  private final PublishSubject<Time> openTime = PublishSubject.create();
-  private final PublishSubject<Time> closeTime = PublishSubject.create();
+  private List<OpenCloseTime> openCloseTimes = new ArrayList<>(days.length);
+
+  private final PublishSubject<OpenCloseTime> openCloseTimeSubject = PublishSubject.create();
 
   private FragmentManager fragmentManager;
 
@@ -41,10 +44,21 @@ public class OpenCloseTimeView extends LinearLayout {
 
     try {
       fragmentManager = ((Activity) context).getFragmentManager();
+      initOpenCloseTimes();
       generateDays(context);
     } catch (ClassCastException e) {
       Log.e(TAG, "Can't get fragment manager");
     }
+  }
+
+  private void initOpenCloseTimes() {
+    for (int i = 0; i < days.length; i++) {
+      openCloseTimes.add(i, new OpenCloseTime(days[i]));
+    }
+  }
+
+  public Observable<OpenCloseTime> observe() {
+    return openCloseTimeSubject;
   }
 
   private void generateDays(final Context context) {
@@ -54,6 +68,14 @@ public class OpenCloseTimeView extends LinearLayout {
 
       final CheckBox chkDay = openCloseView.findViewById(R.id.chkDay);
       chkDay.setText(days[i]);
+
+      int finalI = i;
+
+      RxCompoundButton.checkedChanges(chkDay)
+          .subscribe(checked -> {
+            openCloseTimes.get(finalI).setActive(checked);
+            openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
+          });
 
       final Button btnOpenAt = openCloseView.findViewById(R.id.btnOpenAt);
       RxView.clicks(btnOpenAt)
@@ -67,7 +89,11 @@ public class OpenCloseTimeView extends LinearLayout {
               return getTimePickerDialog(fragmentManager);
             }
           })
-          .subscribe(t -> btnOpenAt.setText(Util.getTimeString(t)));
+          .subscribe(t -> {
+            btnOpenAt.setText(Util.getTimeString(t));
+            openCloseTimes.get(finalI).setOpenTime(t);
+            openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
+          });
 
       final Button btnCloseAt = openCloseView.findViewById(R.id.btnCloseAt);
       RxView.clicks(btnCloseAt)
@@ -81,7 +107,11 @@ public class OpenCloseTimeView extends LinearLayout {
               return getTimePickerDialog(fragmentManager);
             }
           })
-          .subscribe(t -> btnCloseAt.setText(Util.getTimeString(t)));
+          .subscribe(t -> {
+            btnCloseAt.setText(Util.getTimeString(t));
+            openCloseTimes.get(finalI).setClosedTime(t);
+            openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
+          });
 
       addView(openCloseView);
     }
