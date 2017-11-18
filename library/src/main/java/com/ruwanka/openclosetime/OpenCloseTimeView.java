@@ -3,7 +3,11 @@ package com.ruwanka.openclosetime;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -30,6 +34,11 @@ public class OpenCloseTimeView extends LinearLayout {
 
   private FragmentManager fragmentManager;
 
+  private Drawable btnBg;
+  private int bottomMargin;
+  private int itemGap;
+  private int itemHeight;
+
   public OpenCloseTimeView(Context context) {
     this(context, null);
   }
@@ -41,6 +50,22 @@ public class OpenCloseTimeView extends LinearLayout {
   public OpenCloseTimeView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
     setOrientation(VERTICAL);
+
+    TypedArray a = context.obtainStyledAttributes(attrs,
+        R.styleable.OpenCloseTimeView,
+        defStyleAttr,0);
+
+    if (a.hasValue(R.styleable.OpenCloseTimeView_oct_buttonBackground)) {
+      btnBg = ContextCompat.getDrawable(context,
+          a.getResourceId(R.styleable.OpenCloseTimeView_oct_buttonBackground, 0));
+      bottomMargin = a.getDimensionPixelSize(R.styleable.OpenCloseTimeView_oct_bottomMargin,
+          getResources().getDimensionPixelSize(R.dimen.defaultBottomMargin));
+      itemGap = a.getDimensionPixelSize(R.styleable.OpenCloseTimeView_oct_itemGap,
+          getResources().getDimensionPixelSize(R.dimen.defaultItemGap));
+      itemHeight = a.getDimensionPixelSize(R.styleable.OpenCloseTimeView_oct_itemHeight, 0);
+    }
+
+    a.recycle();
 
     try {
       fragmentManager = ((Activity) context).getFragmentManager();
@@ -63,8 +88,7 @@ public class OpenCloseTimeView extends LinearLayout {
 
   private void generateDays(final Context context) {
     for (int i = 0; i < 7; i++) {
-      final LinearLayout openCloseView =
-          (LinearLayout) View.inflate(context, R.layout.open_close_time_day, null);
+      final LinearLayout openCloseView = getOpenCloseTimeStrip(context);
 
       final CheckBox chkDay = openCloseView.findViewById(R.id.chkDay);
       chkDay.setText(days[i]);
@@ -77,7 +101,7 @@ public class OpenCloseTimeView extends LinearLayout {
             openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
           });
 
-      final Button btnOpenAt = openCloseView.findViewById(R.id.btnOpenAt);
+      final Button btnOpenAt = getOpenButton(openCloseView);
       RxView.clicks(btnOpenAt)
           .map(o -> btnOpenAt.getText().toString())
           .flatMap(text -> {
@@ -95,7 +119,7 @@ public class OpenCloseTimeView extends LinearLayout {
             openCloseTimeSubject.onNext(openCloseTimes.get(finalI));
           });
 
-      final Button btnCloseAt = openCloseView.findViewById(R.id.btnCloseAt);
+      final Button btnCloseAt = getCloseButton(openCloseView);
       RxView.clicks(btnCloseAt)
           .map(o -> btnCloseAt.getText().toString())
           .flatMap(text -> {
@@ -115,6 +139,50 @@ public class OpenCloseTimeView extends LinearLayout {
 
       addView(openCloseView);
     }
+  }
+
+  @NonNull
+  private LinearLayout getOpenCloseTimeStrip(Context context) {
+    final LinearLayout openCloseView =
+        (LinearLayout) View.inflate(context, R.layout.open_close_time_day, null);
+    int height = itemHeight == 0 ? LayoutParams.WRAP_CONTENT : itemHeight;
+    LayoutParams params = new LayoutParams(
+        LayoutParams.MATCH_PARENT,
+        height
+    );
+    params.bottomMargin = bottomMargin;
+    openCloseView.setLayoutParams(params);
+    return openCloseView;
+  }
+
+  private Button getCloseButton(LinearLayout openCloseView) {
+    final Button btnCloseAt = openCloseView.findViewById(R.id.btnCloseAt);
+    if (btnBg != null) {
+      btnCloseAt.setBackground(btnBg);
+    }
+    LayoutParams params = new LayoutParams(
+        LayoutParams.WRAP_CONTENT,
+        LayoutParams.WRAP_CONTENT,
+        1f
+    );
+    params.setMargins(0, 0, itemGap, 0);
+    btnCloseAt.setLayoutParams(params);
+    return btnCloseAt;
+  }
+
+  private Button getOpenButton(LinearLayout openCloseView) {
+    final Button btnOpenAt = openCloseView.findViewById(R.id.btnOpenAt);
+    if (btnBg != null) {
+      btnOpenAt.setBackground(btnBg);
+    }
+    LayoutParams params = new LayoutParams(
+        LayoutParams.WRAP_CONTENT,
+        LayoutParams.WRAP_CONTENT,
+        1f
+    );
+    params.setMargins(itemGap, 0, itemGap, 0);
+    btnOpenAt.setLayoutParams(params);
+    return btnOpenAt;
   }
 
   private Observable<Time> getTimePickerDialog(final FragmentManager manager) {

@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-    <CheckBox
-        android:id="@+id/chkDay"
-        android:layout_width="110dp"
-        android:layout_height="wrap_content"/>
-    <Button
-        android:id="@+id/btnOpenAt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/open_at"/>
-    <Button
-        android:id="@+id/btnCloseAt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/close_at"/>
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content">
+  <CheckBox
+    android:id="@+id/chkDay"
+    android:layout_width="110dp"
+    android:layout_height="wrap_content"/>
+  <Button
+    android:id="@+id/btnOpenAt"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:layout_weight="1"
+    android:text="@string/open_at"/>
+  <Button
+    android:id="@+id/btnCloseAt"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:layout_weight="1"
+    android:text="@string/close_at"/>
 </LinearLayout>

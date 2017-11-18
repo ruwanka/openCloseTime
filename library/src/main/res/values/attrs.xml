@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="OpenCloseTimeView">
+    <attr name="oct_buttonBackground" format="reference"/>
+    <attr name="oct_bottomMargin" format="dimension"/>
+    <attr name="oct_itemGap" format="dimension"/>
+    <attr name="oct_itemHeight" format="dimension"/>
+  </declare-styleable>
+</resources>

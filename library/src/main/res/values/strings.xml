@@ -1,6 +1,5 @@
 <resources>
-    <string name="app_name">OpenCloseTimeWidget</string>
+    <string name="app_name">OpenCloseTime</string>
     <string name="open_at">Open At</string>
     <string name="close_at">Close At</string>
-    <string name="monday">Monday</string>
 </resources>
