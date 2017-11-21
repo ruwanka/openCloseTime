@@ -1,4 +1,4 @@
-package com.ruwanka.openclosetimewidget;
+package com.ruwanka.openclosetime;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
